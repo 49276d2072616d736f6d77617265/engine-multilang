@@ -8,11 +8,10 @@ package body Runtime_Init is
 
    procedure Init is
    begin
-      -- Initialize Ada runtime
+      -- Initialize GNAT runtime
       adainit;
 
-      -- Force elaboration chain:
-      -- Core_C → Core
+      -- Force elaboration chain
       null;
    end Init;
 

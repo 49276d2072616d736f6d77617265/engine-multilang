@@ -1,3 +1,5 @@
+with System;
+
 package body Core is
 
    procedure Initialize (S : out Engine_State) is
@@ -14,5 +16,10 @@ package body Core is
    begin
       return S.Counter;
    end Value;
+
+   function State_Size return Natural is
+   begin
+      return Engine_State'Size / System.Storage_Unit;
+   end State_Size;
 
 end Core;

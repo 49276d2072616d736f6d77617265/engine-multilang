@@ -2,11 +2,9 @@ with Core;
 
 package body Core_C is
 
-   function core_init return Engine_Handle is
-      H : Engine_Handle := new Core.Engine_State;
+   procedure core_init (H : Engine_Handle) is
    begin
       Core.Initialize (H.all);
-      return H;
    end core_init;
 
    procedure core_step (H : Engine_Handle) is
@@ -18,5 +16,10 @@ package body Core_C is
    begin
       return int (Core.Value (H.all));
    end core_value;
+
+   function core_state_size return size_t is
+   begin
+      return size_t (Core.State_Size);
+   end core_state_size;
 
 end Core_C;

@@ -6,7 +6,7 @@ package Core_C is
 
    type Engine_Handle is private;
 
-   function core_init return Engine_Handle
+   procedure core_init (H : Engine_Handle)
      with Export, Convention => C;
 
    procedure core_step (H : Engine_Handle)
@@ -15,6 +15,9 @@ package Core_C is
    function core_value (H : Engine_Handle) return int
      with Export, Convention => C;
 
+   function core_state_size return size_t
+     with Export, Convention => C;
+
 private
-   type Engine_Handle is access Core.Engine_State;
+   type Engine_Handle is access all Core.Engine_State;
 end Core_C;
