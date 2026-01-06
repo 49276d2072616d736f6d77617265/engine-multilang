@@ -1,0 +1,3 @@
+build/
+ada/run.adb
+*/.zig-cache
