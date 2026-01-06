@@ -2,7 +2,6 @@ package Core is
 
    Max_Value : constant Integer := 2;
 
-   -- Explicit engine state (opaque)
    type Engine_State is limited private;
 
    procedure Initialize (S : out Engine_State)
@@ -13,7 +12,6 @@ package Core is
 
    function Value (S : Engine_State) return Integer;
 
-   -- Expose size for foreign allocators (Zig, C, etc.)
    function State_Size return Natural;
 
 private

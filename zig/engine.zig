@@ -2,57 +2,43 @@ const std = @import("std");
 
 const EngineHandle = *anyopaque;
 
+// === Ada symbols ===
 extern fn ada_runtime_init() void;
 extern fn core_state_size() usize;
-extern fn core_init(h: EngineHandle) void;
-extern fn core_step(h: EngineHandle) void;
-extern fn core_value(h: EngineHandle) c_int;
+extern fn core_init(h: EngineHandle) c_int;
+extern fn core_step(h: EngineHandle) c_int;
+extern fn core_value(h: EngineHandle, out: *c_int) c_int;
 
-pub const Engine = struct {
-    handle: EngineHandle,
-    allocator: std.mem.Allocator,
-    size: usize,
+// === ABI: exported engine ===
 
-    pub fn init(allocator: std.mem.Allocator) !Engine {
-        const size = core_state_size();
-        const mem = try allocator.alloc(u8, size);
-
-        const handle: EngineHandle = @as(EngineHandle, @ptrCast(mem.ptr));
-        core_init(handle);
-
-        return .{
-            .handle = handle,
-            .allocator = allocator,
-            .size = size,
-        };
-    }
-
-    pub fn step(self: *Engine) void {
-        core_step(self.handle);
-    }
-
-    pub fn value(self: *Engine) c_int {
-        return core_value(self.handle);
-    }
-
-    pub fn deinit(self: *Engine) void {
-        const mem: [*]u8 = @as([*]u8, @ptrCast(self.handle));
-        self.allocator.free(mem[0..self.size]);
-    }
-};
-
-pub fn main() !void {
+export fn engine_init() ?EngineHandle {
     ada_runtime_init();
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    const allocator = std.heap.c_allocator;
+    const size = core_state_size();
 
-    var engine = try Engine.init(gpa.allocator());
-    defer engine.deinit();
+    const mem = allocator.alloc(u8, size) catch return null;
+    const handle = @as(EngineHandle, @ptrCast(mem.ptr));
 
-    engine.step();
-    engine.step();
-    engine.step(); // throw assertion error.
+    if (core_init(handle) != 0) {
+        allocator.free(mem);
+        return null;
+    }
 
-    std.debug.print("Engine value = {}\n", .{engine.value()});
+    return handle;
+}
+
+export fn engine_step(h: EngineHandle) c_int {
+    return core_step(h);
+}
+
+export fn engine_value(h: EngineHandle) c_int {
+    var v: c_int = 0;
+    if (core_value(h, &v) != 0) return -1;
+    return v;
+}
+
+export fn engine_deinit(h: EngineHandle) void {
+    const allocator = std.heap.c_allocator;
+    allocator.free(@as([*]u8, @ptrCast(h))[0..core_state_size()]);
 }

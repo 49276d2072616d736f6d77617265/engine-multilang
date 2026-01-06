@@ -52,6 +52,8 @@ Zig (ABI / Memory / Build)
 Ada (Deterministic Core)
 ```
 
+---
+
 ### Ada — Deterministic Core
 
 Ada implements the **entire domain logic**:
@@ -59,7 +61,7 @@ Ada implements the **entire domain logic**:
 * State definitions
 * Valid state invariants
 * State transitions
-* Contracts (`Pre`, `Post`)
+* Contracts (`Pre`, `Post`, invariants)
 * Optional concurrency using tasks or protected objects
 
 Ada code is written under the assumption that:
@@ -72,7 +74,7 @@ Example responsibilities:
 
 * Validate state consistency
 * Perform deterministic updates
-* Reject invalid transitions at compile-time or runtime
+* Reject invalid transitions at runtime through contracts
 
 ---
 
@@ -104,11 +106,35 @@ Julia is used as a **consumer**, not a controller.
 Responsibilities:
 
 * Calling the engine via `ccall`
-* Running large batches of deterministic simulations
+* Running deterministic simulations
+* Handling error conditions
 * Benchmarking and performance analysis
 * Numerical experimentation and visualization
 
 Julia allows rapid exploration while relying on the native engine for correctness and speed.
+
+---
+
+## Error Handling and Contracts
+
+Correctness is enforced through **Ada contracts** (`Pre`, `Post`, and invariants).
+
+If a contract is violated:
+
+* The Ada core raises an exception
+* The exception does **not** cross language boundaries
+* The ABI layer translates the failure into an explicit error condition
+* No undefined behavior is allowed
+* The final consumer (Julia) decides how to handle the failure
+
+This design guarantees:
+
+* Deterministic failure modes
+* No hidden control flow
+* No silent state corruption
+* Clear responsibility boundaries
+
+Invalid state transitions are treated as **programmer errors**, not recoverable runtime events.
 
 ---
 

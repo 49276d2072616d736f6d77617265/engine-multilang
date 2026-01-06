@@ -1,23 +1,19 @@
 with Interfaces.C;
-with Core;
+with System;
 
 package Core_C is
    use Interfaces.C;
 
-   type Engine_Handle is private;
+   function core_state_size return size_t;
+   pragma Export (C, core_state_size, "core_state_size");
 
-   procedure core_init (H : Engine_Handle)
-     with Export, Convention => C;
+   function core_init (Ptr : System.Address) return int;
+   pragma Export (C, core_init, "core_init");
 
-   procedure core_step (H : Engine_Handle)
-     with Export, Convention => C;
+   function core_step (Ptr : System.Address) return int;
+   pragma Export (C, core_step, "core_step");
 
-   function core_value (H : Engine_Handle) return int
-     with Export, Convention => C;
+   function core_value (Ptr : System.Address; Out_Value : access int) return int;
+   pragma Export (C, core_value, "core_value");
 
-   function core_state_size return size_t
-     with Export, Convention => C;
-
-private
-   type Engine_Handle is access all Core.Engine_State;
 end Core_C;

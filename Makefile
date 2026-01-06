@@ -1,19 +1,30 @@
-# ===== Config =====
+# ========================
+# Config
+# ========================
 
-ADA_SRC := ada
-ZIG_SRC := zig
+ADA_SRC   := ada
+ZIG_SRC   := zig
+JULIA_SRC := julia
 
-BUILD    := build
-ADA_OBJ  := $(BUILD)/ada
-LIBDIR   := $(BUILD)/lib
-ZIG_BIN  := $(BUILD)/zig
+BUILD   := build
+ADA_OBJ := $(BUILD)/ada
+LIBDIR  := $(BUILD)/lib
 
 GNATCC   := gnatgcc
 GNATBIND := gnatbind
 AR       := ar
 ZIG      := zig
+JULIA    := julia
 
-# ===== Ada sources =====
+# ========================
+# Ada flags (PIC É O PONTO-CHAVE)
+# ========================
+
+ADA_CFLAGS := -fPIC -gnata -gnatE
+
+# ========================
+# Ada sources
+# ========================
 
 ADA_ADB := \
 	$(ADA_SRC)/core.adb \
@@ -25,56 +36,82 @@ ADA_OBJECTS := \
 	$(ADA_OBJ)/core_c.o \
 	$(ADA_OBJ)/runtime_init.o
 
-ADA_MAIN := runtime_init
-ADA_BIND_ADB := $(ADA_OBJ)/b~$(ADA_MAIN).adb
-ADA_BIND_OBJ := $(ADA_OBJ)/b~$(ADA_MAIN).o
+ADA_MAIN      := runtime_init
+ADA_BIND_ADB  := $(ADA_OBJ)/b~$(ADA_MAIN).adb
+ADA_BIND_OBJ  := $(ADA_OBJ)/b~$(ADA_MAIN).o
 
-# ===== Outputs =====
+# ========================
+# Outputs
+# ========================
 
-LIB := $(LIBDIR)/libengine.a
-ZIG_EXE := $(ZIG_BIN)/engine
+ADA_LIB := $(LIBDIR)/libengine_ada.a
+ZIG_LIB := $(LIBDIR)/libengine.so
 
-# ===== Default =====
+# ========================
+# Default target
+# ========================
 
-all: $(LIB) $(ZIG_EXE)
+all: $(ZIG_LIB)
 
-# ===== Directories =====
+# ========================
+# Directories
+# ========================
 
-$(ADA_OBJ) $(LIBDIR) $(ZIG_BIN):
+$(ADA_OBJ) $(LIBDIR):
 	mkdir -p $@
 
-# ===== Ada compilation =====
+# ========================
+# Ada compilation (PIC!)
+# ========================
 
 $(ADA_OBJ)/%.o: $(ADA_SRC)/%.adb | $(ADA_OBJ)
-	$(GNATCC) -c -gnata -gnatE $< -o $@
+	$(GNATCC) -c $(ADA_CFLAGS) $< -o $@
 
-# ===== Ada binder =====
+# ========================
+# Ada binder
+# ========================
 
 $(ADA_BIND_ADB): $(ADA_OBJECTS)
 	cd $(ADA_OBJ) && $(GNATBIND) -n $(ADA_MAIN)
 
+# ⚠️ binder TAMBÉM precisa de PIC
 $(ADA_BIND_OBJ): $(ADA_BIND_ADB)
-	$(GNATCC) -c $< -o $@
+	$(GNATCC) -c -fPIC $< -o $@
 
-# ===== Static library =====
+# ========================
+# Ada static library (PIC-safe)
+# ========================
 
-$(LIB): $(ADA_OBJECTS) $(ADA_BIND_OBJ) | $(LIBDIR)
+$(ADA_LIB): $(ADA_OBJECTS) $(ADA_BIND_OBJ) | $(LIBDIR)
 	$(AR) rcs $@ $^
 
-# ===== Zig build =====
+# ========================
+# Zig shared library (FINAL ABI)
+# ========================
 
-$(ZIG_EXE): $(ZIG_SRC)/engine.zig $(LIB) | $(ZIG_BIN)
-	$(ZIG) build-exe $< \
+$(ZIG_LIB): $(ZIG_SRC)/engine.zig $(ADA_LIB) | $(LIBDIR)
+	$(ZIG) build-lib $(ZIG_SRC)/engine.zig \
 		-O ReleaseSafe \
-		$(LIB) \
+		-dynamic \
+		$(ADA_LIB) \
 		-lgnat \
 		-lgnarl \
 		-lgcc_s \
+		--name engine \
 		-femit-bin=$@
 
-# ===== Clean =====
+# ========================
+# Run Julia (consumer)
+# ========================
+
+run-julia: all
+	LD_LIBRARY_PATH=$(LIBDIR) $(JULIA) $(JULIA_SRC)/main.jl
+
+# ========================
+# Clean
+# ========================
 
 clean:
 	rm -rf $(BUILD)
 
-.PHONY: all clean
+.PHONY: all clean run-julia
