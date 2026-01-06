@@ -3,8 +3,9 @@ with Core;
 package body Core_C is
 
    function core_init return Engine_Handle is
-      H : Engine_Handle := new Core.Engine_State'(Core.Initialize);
+      H : Engine_Handle := new Core.Engine_State;
    begin
+      Core.Initialize (H.all);
       return H;
    end core_init;
 

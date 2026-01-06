@@ -1,13 +1,17 @@
 package Core is
 
-   type Engine_State is private;
+   -- Explicit engine state.
+   -- Limited to prevent copying.
+   type Engine_State is limited private;
 
-   function Initialize return Engine_State;
+   -- Initialize a valid engine state.
+   procedure Initialize (S : out Engine_State);
 
+   -- Advance the engine state deterministically.
+   procedure Step (S : in out Engine_State)
+     with Pre => Value (S) < 2;
 
-   procedure Step (S : in out Engine_State);
-
-
+   -- Read-only query of the engine state.
    function Value (S : Engine_State) return Integer;
 
 private
@@ -15,4 +19,5 @@ private
    type Engine_State is record
       Counter : Integer := 0;
    end record;
+
 end Core;
