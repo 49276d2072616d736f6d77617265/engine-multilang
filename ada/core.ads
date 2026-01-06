@@ -1,23 +1,24 @@
 package Core is
 
-   -- Explicit engine state.
-   -- Limited to prevent copying.
+   Max_Value : constant Integer := 2;
+
+   -- Explicit engine state (opaque to users)
    type Engine_State is limited private;
 
-   -- Initialize a valid engine state.
-   procedure Initialize (S : out Engine_State);
+   procedure Initialize (S : out Engine_State)
+     with Post => Value (S) = 0;
 
-   -- Advance the engine state deterministically.
    procedure Step (S : in out Engine_State)
-     with Pre => Value (S) < 2;
+     with Pre => Value (S) < Max_Value;
 
-   -- Read-only query of the engine state.
    function Value (S : Engine_State) return Integer;
 
 private
 
    type Engine_State is record
       Counter : Integer := 0;
-   end record;
+   end record
+     with Invariant =>
+       Counter in 0 .. Max_Value;
 
 end Core;

@@ -16,5 +16,5 @@ package Core_C is
      with Export, Convention => C;
 
 private
-   type Engine_Handle is access all Core.Engine_State;
+   type Engine_Handle is access Core.Engine_State;
 end Core_C;
